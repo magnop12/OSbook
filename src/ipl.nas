@@ -1,12 +1,12 @@
 ; hello-os
 ; TAB=4
-
+CYLS	EQU 10
 		ORG		0x7c00			; 命令の読み込み位置をアセンブラに通知 0x7c00はBIOS規定の番地
 								; 以降の命令は0x7c00を起点としてアセンブルされる
-		JMP		entry			; 0x7c00から始まる最初の命令
+		JMP		entry			; this operation is stored at 0x7c00
+		NOP
 
 ; 以下は標準的なFAT12フォーマットフロッピーディスクのための記述
-		DB		0x90
 		DB		"HELLOIPL"		; ブートセクタの名前を自由に書いてよい（8バイト）
 		DW		512				; 1セクタの大きさ（512にしなければいけない）
 		DB		1				; クラスタの大きさ（1セクタにしなければいけない）
@@ -26,18 +26,58 @@
 		DB		"FAT12   "		; フォーマットの名前（8バイト）
 		RESB	18				; とりあえず18バイトあけておく
 
-; entry point
+; entry point 0x7c50
 
 entry:
-		XOR 	AX,AX			; zero clear AX
+		XOR		AX,AX			; zero clear AX
 		MOV		SS,AX
 		MOV		SP,0x7c00		; SP = entry
 		MOV		DS,AX
 		MOV		ES,AX
 
+; read from disk
+		MOV		AX, 0x0820		; segment address
+		MOV		ES, AX
+		MOV		DL, 0			; drive 0
+		MOV		CH, 0			; cylinder 0
+		MOV		DH, 0			; head 0
+		MOV		CL, 2			; sector 2
+
+readloop:
+		XOR		SI, SI			; failed conter
+retry:
+		MOV 	AH, 0x02		; read function
+		MOV 	AL, 1			; process 1 sector
+		MOV		BX, 0			; read to [ES:BX]
+		int		0x13
+		JNC 	next			; ready for next sector
+		INC		SI
+		CMP		SI, 5			; SI >= 5?
+		JAE		error			; then error
+		MOV		AH, 0			; reset drive
+		int 	0x13
+		JMP		retry			; else retry
+next:
+		MOV		AX, ES
+		ADD		AX, 0x20
+		MOV		ES, AX
+		INC		CL
+		CMP		CL, 18			; CL <= 18?
+		JBE		readloop		; then read next sector
+		MOV		CL, 1
+		INC		DH
+		CMP 	DH, 2			; DH < 2?
+		JB		readloop		; then change head from 0 to 1
+		MOV	 	DH, 0			; else read next cylinder 
+		INC		CH
+		CMP 	CH, CYLS		; #nextcylinder < 10?
+		JB		readloop		; then read next cylinder
+		JMP		0xC200			; jump to haribote.nas
+
+error:
 		MOV		SI,msg
 putloop:
-		MOV		AL,[SI]	 	 	; AL = msg[SI]
+		MOV		AL,[SI]			; AL = msg[DS:SI]
 		ADD		SI,1
 		CMP		AL,0
 		JE		fin
@@ -51,10 +91,10 @@ fin:
 
 msg:
 		DB		0x0a, 0x0a 
-		DB		"HelloOS5 from ipl.nas..."
-		DB		0x0a
+		DB		"#--------------------------#", 0x0a
+		DB		"# error while reading disk #", 0x0a
+		DB		"#--------------------------#", 0x0a
 		DB		0
 
 		RESB	0x7dfe-$		; fill by null
-
-		DB		0x55, 0xaa		; last 2 bytes of IPL
+		DB		0x55, 0xaa		; boot signature
