@@ -1,0 +1,12 @@
+# tolset source folder
+omake/*
+
+# tolset folder
+tolset/*
+
+# intermediate files
+*.bin
+*.lst
+
+# image file
+*.img
