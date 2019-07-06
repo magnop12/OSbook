@@ -1,22 +1,33 @@
 ; harobote-os
 ; TAB=4
-        ORG     0xC200
 
-		MOV		SI,msg
-putloop:
-		MOV		AL,[SI]			; AL = msg[DS:SI]
-		ADD		SI,1
-		CMP		AL,0
-		JE		fin
-		MOV		AH,0x0e			; one character display function code
-		MOV		BX,15			; color code
-		INT		0x10			; BIOS function call
-		JMP		putloop
+; BOOT_INFO
+CLYS    EQU 0x0ff0
+LEDS    EQU 0x0ff1
+VMODE   EQU 0x0ff2
+SCRNX   EQU 0x0ff4
+SCRNY   EQU 0x0ff6
+VRAM    EQU 0x0ff8
+
+    ORG     0xC200
+
+; change video mode
+
+    MOV     AL, 0x13
+    MOV     AH, 0x00
+    INT     0x10
+    MOV     WORD [VMODE], 8
+    MOV     WORD [SCRNX], 320
+    MOV     WORD [SCRNY], 200
+    MOV     DWORD [VRAM], 0x000a0000
+
+; get keybord info
+
+    MOV     AH, 0x02
+    INT     0x16
+    MOV     BYTE [LEDS], AL
+
 fin:
-		HLT						; halt
-		JMP		fin
+	HLT						; halt
+	JMP		fin
 
-msg:
-		DB		0x0a, 0x0a 
-		DB		"[*] write string from haribote.nas", 0x0a
-		DB		0

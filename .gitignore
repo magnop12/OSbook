@@ -7,6 +7,7 @@ tolset/*
 # intermediate files
 *.bin
 *.lst
+*.sys
 
 # image file
 *.img

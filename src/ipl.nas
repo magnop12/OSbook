@@ -1,4 +1,4 @@
-; hello-os
+; haribote-ipl
 ; TAB=4
 CYLS	EQU 10
 		ORG		0x7c00			; 命令の読み込み位置をアセンブラに通知 0x7c00はBIOS規定の番地
@@ -7,7 +7,7 @@ CYLS	EQU 10
 		NOP
 
 ; 以下は標準的なFAT12フォーマットフロッピーディスクのための記述
-		DB		"HELLOIPL"		; ブートセクタの名前を自由に書いてよい（8バイト）
+		DB		"HARIBOTE"		; ブートセクタの名前を自由に書いてよい（8バイト）
 		DW		512				; 1セクタの大きさ（512にしなければいけない）
 		DB		1				; クラスタの大きさ（1セクタにしなければいけない）
 		DW		1				; FATがどこから始まるか（普通は1セクタ目からにする）
@@ -22,7 +22,7 @@ CYLS	EQU 10
 		DD		2880			; このドライブ大きさをもう一度書く
 		DB		0,0,0x29		; よくわからないけどこの値にしておくといいらしい
 		DD		0xffffffff		; たぶんボリュームシリアル番号
-		DB		"HELLO-OS   "	; ディスクの名前（11バイト）
+		DB		"HARIBOTE-OS"	; ディスクの名前（11バイト）
 		DB		"FAT12   "		; フォーマットの名前（8バイト）
 		RESB	18				; とりあえず18バイトあけておく
 
@@ -31,11 +31,12 @@ CYLS	EQU 10
 entry:
 		XOR		AX,AX			; zero clear AX
 		MOV		SS,AX
-		MOV		SP,0x7c00		; SP = entry
+		MOV		SP,0x7c00		; SP = boot sector address
 		MOV		DS,AX
 		MOV		ES,AX
 
 ; read from disk
+
 		MOV		AX, 0x0820		; segment address
 		MOV		ES, AX
 		MOV		DL, 0			; drive 0
@@ -49,13 +50,13 @@ retry:
 		MOV 	AH, 0x02		; read function
 		MOV 	AL, 1			; process 1 sector
 		MOV		BX, 0			; read to [ES:BX]
-		int		0x13
+		INT		0x13
 		JNC 	next			; ready for next sector
 		INC		SI
 		CMP		SI, 5			; SI >= 5?
 		JAE		error			; then error
 		MOV		AH, 0			; reset drive
-		int 	0x13
+		INT 	0x13
 		JMP		retry			; else retry
 next:
 		MOV		AX, ES
@@ -70,8 +71,12 @@ next:
 		JB		readloop		; then change head from 0 to 1
 		MOV	 	DH, 0			; else read next cylinder 
 		INC		CH
-		CMP 	CH, CYLS		; #nextcylinder < 10?
+		CMP 	CH, CYLS		; #nextcylinder < CYLS?
 		JB		readloop		; then read next cylinder
+
+; jump to habibote.sys
+
+		MOV		[0x0ff0], CH
 		JMP		0xC200			; jump to haribote.nas
 
 error:
