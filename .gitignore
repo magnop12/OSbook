@@ -8,6 +8,11 @@ tolset/*
 *.bin
 *.lst
 *.sys
+*.gas
+*.bim
+*.hrb
+*.map
+*.obj
 
 # image file
 *.img
