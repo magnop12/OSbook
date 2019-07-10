@@ -95,10 +95,10 @@ fin:
 		JMP		fin
 
 msg:
-		DB		0x0a, 0x0a 
-		DB		"#--------------------------#", 0x0a
-		DB		"# error while reading disk #", 0x0a
-		DB		"#--------------------------#", 0x0a
+		DB		0x0d, 0x0a 
+		DB		"#--------------------------#", 0x0d, 0x0a
+		DB		"# error while reading disk #", 0x0d, 0x0a
+		DB		"#--------------------------#", 0x0d, 0x0a
 		DB		0
 
 		RESB	0x7dfe-$		; fill by null
