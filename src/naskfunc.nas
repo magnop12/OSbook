@@ -51,19 +51,19 @@ _io_in32:
 _io_out8:	; void io_out8(int port, int data);
 	MOV		EDX, [ESP+4]
 	MOV		AL, [ESP+8]
-	OUT 	DX, AL
+	OUT		DX, AL
 	RET
 
 _io_out16:
 	MOV		EDX, [ESP+4]
 	MOV		AL, [ESP+8]
-	OUT 	DX, AX
+	OUT		DX, AX
 	RET
 
 _io_out32:
 	MOV		EDX, [ESP+4]
 	MOV		AL, [ESP+8]
-	OUT 	DX, EAX
+	OUT		DX, EAX
 	RET
 
 _io_load_eflags:	; int io_load_eflags(void);
